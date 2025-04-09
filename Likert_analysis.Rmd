@@ -1,0 +1,118 @@
+---
+title: "Likert"
+author: "Laura"
+date: "2023-12-07"
+output: html_document
+---
+
+#Load libraries and data
+```{r}
+library(readr)
+library(likert)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(readxl)
+Data= read_csv("Fruits_data.csv") 
+Data = Data[,c(2,4:11)]
+Data
+```
+```{r}
+Data = Data %>% filter(Fruta=='Zapote') #Pitahaya, Chontaduro, Mamoncillo, Zapote, Chirimoya
+Data = Data[,2:9]
+Data
+```
+
+
+#Dummies variables
+```{r}
+for (columna in colnames(Data)) {
+  Data[[columna]] = factor(Data[[columna]], levels = c("Nada importante",5, "Poco importante",4, 
+  "Moderadamente importante",3, "Importante",2,"Muy importante",1), labels = c(5,5,4,4,3,3,2,2,1,1))
+  Data[[columna]] = as.numeric(Data[[columna]])
+}
+Data
+```
+
+
+```{r}
+colnames(Data) = c("Color","Apariencia","Textura","Aroma","Tamaño","Estado madurez","Precio","Origen_fruto")
+Data
+```
+
+#Likert
+```{r}
+Data_n <- lapply(Data, function(x) factor(x, levels = 1:5))
+Data_n <- as.data.frame(Data_n)
+lk <-likert(Data_n)
+lk
+```
+
+
+```{r}
+summary(lk)
+```
+
+
+```{r}
+likert.bar.plot(lk)
+```
+
+
+```{r}
+likert.density.plot(lk)
+```
+
+```{r}
+install.packages("extrafont")
+library(extrafont)
+
+# Importar fuentes
+font_import()
+loadfonts(device = "win")
+```
+
+```{r}
+#likert heatmap always sort the data by alphabet so we had to change the items name 
+data = lk$results %>%
+  dplyr::arrange(`5`) %>%
+  dplyr::mutate(Item = paste(str_pad(row_number(), 2, pad = "0"), Item, sep = ' '))
+
+lk1 = likert(summary = data)
+
+heatmap_plot = likert.heat.plot(lk1, 
+                                 low.color = "white", 
+                                 high.color = "tan2", 
+                                 geom_text_args = list(family = "Times New Roman", size = 4)) + 
+  theme(
+    text = element_text(family = "Times New Roman"),  
+    axis.text = element_text(family = "Times New Roman"),  
+    axis.title = element_text(family = "Times New Roman"),  
+    legend.title = element_text(family = "Times New Roman"),  
+    legend.text = element_text(family = "Times New Roman")
+  )
+print(heatmap_plot)
+```
+
+```{r}
+likert.density.plot(lk, facet = FALSE, bw=0.5)
+```
+
+
+```{r}
+for (col in colnames(Data_n)){
+  data = data.frame(Data_n[[col]])
+  colnames(data) = col
+  lk_ = likert(data)
+  print(likert.density.plot(lk_))
+}
+```
+```{r}
+likert.histogram.plot(lk, xlab = "Number of  responses")
+```
+
+
+
+
+
